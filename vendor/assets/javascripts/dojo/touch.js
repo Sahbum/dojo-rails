@@ -1,70 +1,151 @@
 /*
-	Copyright (c) 2004-2012, The Dojo Foundation All Rights Reserved.
+	Copyright (c) 2004-2011, The Dojo Foundation All Rights Reserved.
 	Available via Academic Free License >= 2.1 OR the modified BSD license.
 	see: http://dojotoolkit.org/license for details
 */
 
 //>>built
-define("dojo/touch",["./_base/kernel","./aspect","./dom","./on","./has","./mouse","./domReady","./_base/window"],function(_1,_2,_3,on,_4,_5,_6,_7){
-var _8=_4("touch");
-var _9=false;
-if(_4("ios")){
-var ua=navigator.userAgent;
-var v=ua.match(/OS ([\d_]+)/)?RegExp.$1:"1";
-var os=parseFloat(v.replace(/_/,".").replace(/_/g,""));
-_9=os<5;
+define("dojo/touch",["./_base/kernel","./aspect","./dom","./dom-class","./_base/lang","./on","./has","./mouse","./domReady","./_base/window"],function(_1,_2,_3,_4,_5,on,_6,_7,_8,_9){
+var _a=_6("touch");
+var _b=_6("ios")<5;
+var _c=navigator.pointerEnabled||navigator.msPointerEnabled,_d=(function(){
+var _e={};
+for(var _f in {down:1,move:1,up:1,cancel:1,over:1,out:1}){
+_e[_f]=!navigator.pointerEnabled?"MSPointer"+_f.charAt(0).toUpperCase()+_f.slice(1):"pointer"+_f;
 }
-var _a;
-function _b(_c,_d){
-if(_8){
-return function(_e,_f){
-var _10=on(_e,_d,_f),_11=on(_e,_c,function(evt){
-if(!_a||(new Date()).getTime()>_a+1000){
-_f.call(this,evt);
+return _e;
+})();
+var _10,_11,_12,_13,_14,_15,_16,_17;
+var _18;
+function _19(_1a,_1b,_1c){
+if(_c&&_1c){
+return function(_1d,_1e){
+return on(_1d,_1c,_1e);
+};
+}else{
+if(_a){
+return function(_1f,_20){
+var _21=on(_1f,_1b,_20),_22=on(_1f,_1a,function(evt){
+if(!_18||(new Date()).getTime()>_18+1000){
+_20.call(this,evt);
 }
 });
 return {remove:function(){
-_10.remove();
-_11.remove();
+_21.remove();
+_22.remove();
 }};
 };
 }else{
-return function(_12,_13){
-return on(_12,_c,_13);
+return function(_23,_24){
+return on(_23,_1a,_24);
 };
 }
+}
 };
-var _14,_15;
-if(_8){
-_6(function(){
-_15=_7.body();
-_7.doc.addEventListener("touchstart",function(evt){
-_a=(new Date()).getTime();
-var _16=_15;
-_15=evt.target;
-on.emit(_16,"dojotouchout",{target:_16,relatedTarget:_15,bubbles:true});
-on.emit(_15,"dojotouchover",{target:_15,relatedTarget:_16,bubbles:true});
+function _25(_26){
+do{
+if(_26.dojoClick!==undefined){
+return _26.dojoClick;
+}
+}while(_26=_26.parentNode);
+};
+function _27(e,_28,_29){
+_11=!e.target.disabled&&_25(e.target);
+if(_11){
+_12=e.target;
+_13=e.touches?e.touches[0].pageX:e.clientX;
+_14=e.touches?e.touches[0].pageY:e.clientY;
+_15=(typeof _11=="object"?_11.x:(typeof _11=="number"?_11:0))||4;
+_16=(typeof _11=="object"?_11.y:(typeof _11=="number"?_11:0))||4;
+if(!_10){
+_10=true;
+_9.doc.addEventListener(_28,function(e){
+_11=_11&&e.target==_12&&Math.abs((e.touches?e.touches[0].pageX:e.clientX)-_13)<=_15&&Math.abs((e.touches?e.touches[0].pageY:e.clientY)-_14)<=_16;
 },true);
-on(_7.doc,"touchmove",function(evt){
-_a=(new Date()).getTime();
-var _17=_7.doc.elementFromPoint(evt.pageX-(_9?0:_7.global.pageXOffset),evt.pageY-(_9?0:_7.global.pageYOffset));
-if(_17&&_15!==_17){
-on.emit(_15,"dojotouchout",{target:_15,relatedTarget:_17,bubbles:true});
-on.emit(_17,"dojotouchover",{target:_17,relatedTarget:_15,bubbles:true});
-_15=_17;
+_9.doc.addEventListener(_29,function(e){
+if(_11){
+_17=(new Date()).getTime();
+var _2a=e.target;
+if(_2a.tagName==="LABEL"){
+_2a=_3.byId(_2a.getAttribute("for"))||_2a;
 }
+setTimeout(function(){
+on.emit(_2a,"click",{bubbles:true,cancelable:true,_dojo_click:true});
 });
-});
-_14=function(_18,_19){
-return on(_7.doc,"touchmove",function(evt){
-if(_18===_7.doc||_3.isDescendant(_15,_18)){
-evt.target=_15;
-_19.call(this,evt);
 }
-});
+},true);
+function _2b(_2c){
+_9.doc.addEventListener(_2c,function(e){
+if(!e._dojo_click&&(new Date()).getTime()<=_17+1000&&!(e.target.tagName=="INPUT"&&_4.contains(e.target,"dijitOffScreen"))){
+e.stopPropagation();
+e.stopImmediatePropagation&&e.stopImmediatePropagation();
+if(_2c=="click"&&(e.target.tagName!="INPUT"||e.target.type=="radio"||e.target.type=="checkbox")&&e.target.tagName!="TEXTAREA"&&e.target.tagName!="AUDIO"&&e.target.tagName!="VIDEO"){
+e.preventDefault();
+}
+}
+},true);
 };
+_2b("click");
+_2b("mousedown");
+_2b("mouseup");
 }
-var _1a={press:_b("mousedown","touchstart"),move:_b("mousemove",_14),release:_b("mouseup","touchend"),cancel:_b(_5.leave,"touchcancel"),over:_b("mouseover","dojotouchover"),out:_b("mouseout","dojotouchout"),enter:_5._eventHandler(_b("mouseover","dojotouchover")),leave:_5._eventHandler(_b("mouseout","dojotouchout"))};
-1&&(_1.touch=_1a);
-return _1a;
+}
+};
+var _2d;
+if(_a){
+if(_c){
+_8(function(){
+_9.doc.addEventListener(_d.down,function(evt){
+_27(evt,_d.move,_d.up);
+},true);
+});
+}else{
+_8(function(){
+_2d=_9.body();
+_9.doc.addEventListener("touchstart",function(evt){
+_18=(new Date()).getTime();
+var _2e=_2d;
+_2d=evt.target;
+on.emit(_2e,"dojotouchout",{relatedTarget:_2d,bubbles:true});
+on.emit(_2d,"dojotouchover",{relatedTarget:_2e,bubbles:true});
+_27(evt,"touchmove","touchend");
+},true);
+function _2f(evt){
+var _30=_5.delegate(evt,{bubbles:true});
+if(_6("ios")>=6){
+_30.touches=evt.touches;
+_30.altKey=evt.altKey;
+_30.changedTouches=evt.changedTouches;
+_30.ctrlKey=evt.ctrlKey;
+_30.metaKey=evt.metaKey;
+_30.shiftKey=evt.shiftKey;
+_30.targetTouches=evt.targetTouches;
+}
+return _30;
+};
+on(_9.doc,"touchmove",function(evt){
+_18=(new Date()).getTime();
+var _31=_9.doc.elementFromPoint(evt.pageX-(_b?0:_9.global.pageXOffset),evt.pageY-(_b?0:_9.global.pageYOffset));
+if(_31){
+if(_2d!==_31){
+on.emit(_2d,"dojotouchout",{relatedTarget:_31,bubbles:true});
+on.emit(_31,"dojotouchover",{relatedTarget:_2d,bubbles:true});
+_2d=_31;
+}
+if(!on.emit(_31,"dojotouchmove",_2f(evt))){
+evt.preventDefault();
+}
+}
+});
+on(_9.doc,"touchend",function(evt){
+_18=(new Date()).getTime();
+var _32=_9.doc.elementFromPoint(evt.pageX-(_b?0:_9.global.pageXOffset),evt.pageY-(_b?0:_9.global.pageYOffset))||_9.body();
+on.emit(_32,"dojotouchend",_2f(evt));
+});
+});
+}
+}
+var _33={press:_19("mousedown","touchstart",_d.down),move:_19("mousemove","dojotouchmove",_d.move),release:_19("mouseup","dojotouchend",_d.up),cancel:_19(_7.leave,"touchcancel",_a?_d.cancel:null),over:_19("mouseover","dojotouchover",_d.over),out:_19("mouseout","dojotouchout",_d.out),enter:_7._eventHandler(_19("mouseover","dojotouchover",_d.over)),leave:_7._eventHandler(_19("mouseout","dojotouchout",_d.out))};
+1&&(_1.touch=_33);
+return _33;
 });
